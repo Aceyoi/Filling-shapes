@@ -1,6 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace WinFormsApp3
 {
@@ -10,15 +11,32 @@ namespace WinFormsApp3
         private Bitmap userShapeBitmap; // Bitmap для фигуры пользователя
         private bool isDrawing = false; // Флаг для отслеживания рисования
         private Point lastPoint; // Последняя точка рисования
+
         public Form1()
         {
             InitializeComponent();
+
             // Инициализация Bitmap для PictureBox
             triangleBitmap = new Bitmap(pictureBox1.Width, pictureBox1.Height);
             userShapeBitmap = new Bitmap(pictureBox2.Width, pictureBox2.Height);
-            // Привязка Bitmap к PictureBox
+
+            // Очистка Bitmap белым цветом
+            using (Graphics g = Graphics.FromImage(triangleBitmap))
+            {
+                g.Clear(Color.White);
+            }
+            using (Graphics g = Graphics.FromImage(userShapeBitmap))
+            {
+                g.Clear(Color.White);
+            }
+
             pictureBox1.Image = triangleBitmap;
             pictureBox2.Image = userShapeBitmap;
+
+            // Подключение событий мыши
+            pictureBox2.MouseDown += pictureBox2_MouseDown;
+            pictureBox2.MouseMove += pictureBox2_MouseMove;
+            pictureBox2.MouseUp += pictureBox2_MouseUp;
         }
 
         // Метод для рисования треугольника
@@ -26,6 +44,9 @@ namespace WinFormsApp3
         {
             using (Graphics g = Graphics.FromImage(triangleBitmap))
             {
+                // Очистка PictureBox
+                g.Clear(Color.White);
+
                 // Определение вершин треугольника
                 Point t0 = new Point(10, 70);
                 Point t1 = new Point(50, 160);
@@ -87,7 +108,6 @@ namespace WinFormsApp3
             b = temp;
         }
 
-
         // Обработчик события MouseDown для pictureBox2
         private void pictureBox2_MouseDown(object sender, MouseEventArgs e)
         {
@@ -115,34 +135,51 @@ namespace WinFormsApp3
             isDrawing = false;
         }
 
-        // Метод для построчной заливки фигуры пользователя
-        private void FillUserShapeLineByLine()
+        // Метод для заливки фигуры пользователя
+        private void FillUserShape(Color fillColor)
         {
-            for (int y = 0; y < userShapeBitmap.Height; y++)
+            // Находим стартовую точку для заливки (например, центр PictureBox)
+            Point startPoint = new Point(pictureBox2.Width / 2, pictureBox2.Height / 2);
+
+            // Проверяем, что стартовая точка не находится на границе
+            if (userShapeBitmap.GetPixel(startPoint.X, startPoint.Y).ToArgb() == Color.Black.ToArgb())
             {
-                bool inside = false;
-                int xStart = 0;
-                for (int x = 0; x < userShapeBitmap.Width; x++)
+                MessageBox.Show("Стартовая точка находится на границе фигуры. Попробуйте другую точку.");
+                return;
+            }
+
+            // Выполняем заливку
+            FloodFill(startPoint, fillColor);
+            pictureBox2.Refresh();
+        }
+
+        // Алгоритм заливки (Flood Fill)
+        private void FloodFill(Point startPoint, Color fillColor)
+        {
+            Color targetColor = userShapeBitmap.GetPixel(startPoint.X, startPoint.Y);
+            if (targetColor.ToArgb() == fillColor.ToArgb()) return;
+
+            Stack<Point> pixels = new Stack<Point>();
+            pixels.Push(startPoint);
+
+            while (pixels.Count > 0)
+            {
+                Point current = pixels.Pop();
+                if (current.X < 0 || current.X >= userShapeBitmap.Width ||
+                    current.Y < 0 || current.Y >= userShapeBitmap.Height)
+                    continue;
+
+                Color currentColor = userShapeBitmap.GetPixel(current.X, current.Y);
+                if (currentColor.ToArgb() == targetColor.ToArgb())
                 {
-                    if (userShapeBitmap.GetPixel(x, y).ToArgb() == Color.Black.ToArgb())
-                    {
-                        if (!inside)
-                        {
-                            xStart = x;
-                            inside = true;
-                        }
-                    }
-                    else if (inside)
-                    {
-                        using (Graphics g = Graphics.FromImage(userShapeBitmap))
-                        {
-                            g.DrawLine(Pens.Blue, xStart, y, x - 1, y);
-                        }
-                        inside = false;
-                    }
+                    userShapeBitmap.SetPixel(current.X, current.Y, fillColor);
+
+                    pixels.Push(new Point(current.X - 1, current.Y)); // Влево
+                    pixels.Push(new Point(current.X + 1, current.Y)); // Вправо
+                    pixels.Push(new Point(current.X, current.Y - 1)); // Вверх
+                    pixels.Push(new Point(current.X, current.Y + 1)); // Вниз
                 }
             }
-            pictureBox2.Refresh(); // Обновление PictureBox
         }
 
         // Обработчик кнопки button1 (Рисование треугольника)
@@ -154,7 +191,7 @@ namespace WinFormsApp3
         // Обработчик кнопки button3 (Заливка фигуры пользователя)
         private void button3_Click(object sender, EventArgs e)
         {
-            FillUserShapeLineByLine();
+            FillUserShape(Color.Blue); // Заливаем фигуру синим цветом
         }
     }
 }
