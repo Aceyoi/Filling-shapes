@@ -1,70 +1,78 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Windows.Forms;
 
 namespace WinFormsApp3
 {
     public partial class Form1 : Form
     {
-        private Bitmap triangleBitmap; // Bitmap для треугольника
-        private Bitmap userShapeBitmap; // Bitmap для фигуры пользователя
-        private bool isDrawing = false; // Флаг для отслеживания рисования
-        private Point lastPoint; // Последняя точка рисования
+        private Bitmap triangleBitmap;
+        private Bitmap userShapeBitmap;
+        private bool isDrawing = false;
+        private Point lastPoint;
+        private Color currentColor = Color.Black;
+        private int penWidth = 2;
 
         public Form1()
         {
             InitializeComponent();
+            InitializeBitmaps();
+            SetupEventHandlers();
+        }
 
-            // Инициализация Bitmap для PictureBox
+        private void InitializeBitmaps()
+        {
             triangleBitmap = new Bitmap(pictureBox1.Width, pictureBox1.Height);
             userShapeBitmap = new Bitmap(pictureBox2.Width, pictureBox2.Height);
 
-            // Очистка Bitmap белым цветом
-            using (Graphics g = Graphics.FromImage(triangleBitmap))
-            {
-                g.Clear(Color.White);
-            }
-            using (Graphics g = Graphics.FromImage(userShapeBitmap))
-            {
-                g.Clear(Color.White);
-            }
+            ClearBitmap(triangleBitmap, Color.White);
+            ClearBitmap(userShapeBitmap, Color.White);
 
             pictureBox1.Image = triangleBitmap;
             pictureBox2.Image = userShapeBitmap;
-
-            // Подключение событий мыши
-            pictureBox2.MouseDown += pictureBox2_MouseDown;
-            pictureBox2.MouseMove += pictureBox2_MouseMove;
-            pictureBox2.MouseUp += pictureBox2_MouseUp;
         }
 
-        // Метод для рисования треугольника
+        private void ClearBitmap(Bitmap bitmap, Color color)
+        {
+            using (Graphics g = Graphics.FromImage(bitmap))
+            {
+                g.Clear(color);
+            }
+        }
+
+        private void SetupEventHandlers()
+        {
+            pictureBox2.MouseDown += PictureBox2_MouseDown;
+            pictureBox2.MouseMove += PictureBox2_MouseMove;
+            pictureBox2.MouseUp += PictureBox2_MouseUp;
+            pictureBox2.MouseLeave += PictureBox2_MouseLeave;
+
+            button1.Click += Button1_Click;
+            button3.Click += Button3_Click;
+        }
+
         private void DrawTriangle()
         {
             using (Graphics g = Graphics.FromImage(triangleBitmap))
             {
-                // Очистка PictureBox
                 g.Clear(Color.White);
 
-                // Определение вершин треугольника
-                Point t0 = new Point(10, 70);
-                Point t1 = new Point(50, 160);
-                Point t2 = new Point(70, 80);
+                Point[] points = {
+                    new Point(10, 70),
+                    new Point(50, 160),
+                    new Point(70, 80)
+                };
 
-                // Рисование треугольника
-                Point[] points = { t0, t1, t2 };
-                g.DrawPolygon(Pens.Black, points);
-
-                // Заливка треугольника
-                FillTriangle(t0, t1, t2, Color.Red);
+                g.DrawPolygon(new Pen(currentColor, penWidth), points);
+                FillTriangle(points[0], points[1], points[2], Color.Red);
             }
-            pictureBox1.Refresh(); // Обновление PictureBox
+            pictureBox1.Refresh();
         }
 
         private void FillTriangle(Point t0, Point t1, Point t2, Color color)
         {
-            // Сортировка вершин по Y (t0 -> верхняя, t2 -> нижняя)
             if (t0.Y > t1.Y) Swap(ref t0, ref t1);
             if (t0.Y > t2.Y) Swap(ref t0, ref t2);
             if (t1.Y > t2.Y) Swap(ref t1, ref t2);
@@ -86,112 +94,111 @@ namespace WinFormsApp3
 
                 for (int j = A.X; j <= B.X; j++)
                 {
-                    triangleBitmap.SetPixel(j, t0.Y + i, color);
+                    if (j >= 0 && j < triangleBitmap.Width && t0.Y + i >= 0 && t0.Y + i < triangleBitmap.Height)
+                    {
+                        triangleBitmap.SetPixel(j, t0.Y + i, color);
+                    }
                 }
             }
         }
 
-        // Вспомогательный метод для линейной интерполяции
-        private Point Lerp(Point a, Point b, float t)
+        private Point Lerp(Point a, Point b, float t) => new Point(
+            (int)(a.X + (b.X - a.X) * t),
+            (int)(a.Y + (b.Y - a.Y) * t));
+
+        private void Swap(ref Point a, ref Point b) => (a, b) = (b, a);
+
+        private void PictureBox2_MouseDown(object sender, MouseEventArgs e)
         {
-            return new Point(
-                (int)(a.X + (b.X - a.X) * t),
-                (int)(a.Y + (b.Y - a.Y) * t)
-            );
+            if (e.Button == MouseButtons.Left)
+            {
+                isDrawing = true;
+                lastPoint = e.Location;
+            }
         }
 
-        // Вспомогательный метод для обмена значений
-        private void Swap(ref Point a, ref Point b)
+        private void PictureBox2_MouseMove(object sender, MouseEventArgs e)
         {
-            Point temp = a;
-            a = b;
-            b = temp;
-        }
-
-        // Обработчик события MouseDown для pictureBox2
-        private void pictureBox2_MouseDown(object sender, MouseEventArgs e)
-        {
-            isDrawing = true;
-            lastPoint = e.Location;
-        }
-
-        // Обработчик события MouseMove для pictureBox2
-        private void pictureBox2_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (isDrawing)
+            if (isDrawing && e.Button == MouseButtons.Left)
             {
                 using (Graphics g = Graphics.FromImage(userShapeBitmap))
                 {
-                    g.DrawLine(Pens.Black, lastPoint, e.Location);
+                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+                    g.DrawLine(new Pen(currentColor, penWidth), lastPoint, e.Location);
                 }
                 lastPoint = e.Location;
                 pictureBox2.Refresh();
             }
         }
 
-        // Обработчик события MouseUp для pictureBox2
-        private void pictureBox2_MouseUp(object sender, MouseEventArgs e)
-        {
-            isDrawing = false;
-        }
+        private void PictureBox2_MouseUp(object sender, MouseEventArgs e) => isDrawing = false;
+        private void PictureBox2_MouseLeave(object sender, EventArgs e) => isDrawing = false;
 
-        // Метод для заливки фигуры пользователя
         private void FillUserShape(Color fillColor)
         {
-            // Находим стартовую точку для заливки (например, центр PictureBox)
-            Point startPoint = new Point(pictureBox2.Width / 2, pictureBox2.Height / 2);
+            BitmapData bmpData = userShapeBitmap.LockBits(
+                new Rectangle(0, 0, userShapeBitmap.Width, userShapeBitmap.Height),
+                System.Drawing.Imaging.ImageLockMode.ReadWrite,
+                userShapeBitmap.PixelFormat);
 
-            // Проверяем, что стартовая точка не находится на границе
-            if (userShapeBitmap.GetPixel(startPoint.X, startPoint.Y).ToArgb() == Color.Black.ToArgb())
+            int bytes = Math.Abs(bmpData.Stride) * userShapeBitmap.Height;
+            byte[] rgbValues = new byte[bytes];
+            System.Runtime.InteropServices.Marshal.Copy(bmpData.Scan0, rgbValues, 0, bytes);
+
+            for (int y = 0; y < userShapeBitmap.Height; y++)
             {
-                MessageBox.Show("Стартовая точка находится на границе фигуры. Попробуйте другую точку.");
-                return;
+                bool inside = false;
+                bool border = false;
+                int k = 0;
+                int startX = 0;
+
+                for (int x = 0; x < userShapeBitmap.Width; x++)
+                {
+                    int index = (y * bmpData.Stride) + (x * 4);
+
+                    if (rgbValues[index + 3] == 255 &&
+                        (rgbValues[index] != 255 || rgbValues[index + 1] != 255 || rgbValues[index + 2] != 255))
+                    {
+                        if (!border)
+                        {
+                            border = true;
+                            k++;
+                        }
+
+                        if (inside)
+                        {
+                            inside = false;
+                            for (int i = startX + 1; i < x; i++)
+                            {
+                                int fillIndex = (y * bmpData.Stride) + (i * 4);
+                                rgbValues[fillIndex] = fillColor.B;
+                                rgbValues[fillIndex + 1] = fillColor.G;
+                                rgbValues[fillIndex + 2] = fillColor.R;
+                                rgbValues[fillIndex + 3] = fillColor.A;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (border)
+                        {
+                            if (k % 2 != 0)
+                            {
+                                inside = true;
+                                startX = x;
+                            }
+                            border = false;
+                        }
+                    }
+                }
             }
 
-            // Выполняем заливку
-            FloodFill(startPoint, fillColor);
+            System.Runtime.InteropServices.Marshal.Copy(rgbValues, 0, bmpData.Scan0, bytes);
+            userShapeBitmap.UnlockBits(bmpData);
             pictureBox2.Refresh();
         }
 
-        // Алгоритм заливки (Flood Fill)
-        private void FloodFill(Point startPoint, Color fillColor)
-        {
-            Color targetColor = userShapeBitmap.GetPixel(startPoint.X, startPoint.Y);
-            if (targetColor.ToArgb() == fillColor.ToArgb()) return;
-
-            Stack<Point> pixels = new Stack<Point>();
-            pixels.Push(startPoint);
-
-            while (pixels.Count > 0)
-            {
-                Point current = pixels.Pop();
-                if (current.X < 0 || current.X >= userShapeBitmap.Width ||
-                    current.Y < 0 || current.Y >= userShapeBitmap.Height)
-                    continue;
-
-                Color currentColor = userShapeBitmap.GetPixel(current.X, current.Y);
-                if (currentColor.ToArgb() == targetColor.ToArgb())
-                {
-                    userShapeBitmap.SetPixel(current.X, current.Y, fillColor);
-
-                    pixels.Push(new Point(current.X - 1, current.Y)); // Влево
-                    pixels.Push(new Point(current.X + 1, current.Y)); // Вправо
-                    pixels.Push(new Point(current.X, current.Y - 1)); // Вверх
-                    pixels.Push(new Point(current.X, current.Y + 1)); // Вниз
-                }
-            }
-        }
-
-        // Обработчик кнопки button1 (Рисование треугольника)
-        private void button1_Click(object sender, EventArgs e)
-        {
-            DrawTriangle();
-        }
-
-        // Обработчик кнопки button3 (Заливка фигуры пользователя)
-        private void button3_Click(object sender, EventArgs e)
-        {
-            FillUserShape(Color.Blue); // Заливаем фигуру синим цветом
-        }
+        private void Button1_Click(object sender, EventArgs e) => DrawTriangle();
+        private void Button3_Click(object sender, EventArgs e) => FillUserShape(Color.Blue);
     }
 }

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Fmudi\\Desktop\\WinFormsApp1\\WinFormsApp1\\WinFormsApp1.csproj": {}
+    "C:\\Users\\Fmudi\\Desktop\\Filling-shapes-main\\WinFormsApp1\\WinFormsApp1.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Fmudi\\Desktop\\WinFormsApp1\\WinFormsApp1\\WinFormsApp1.csproj": {
+    "C:\\Users\\Fmudi\\Desktop\\Filling-shapes-main\\WinFormsApp1\\WinFormsApp1.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Fmudi\\Desktop\\WinFormsApp1\\WinFormsApp1\\WinFormsApp1.csproj",
+        "projectUniqueName": "C:\\Users\\Fmudi\\Desktop\\Filling-shapes-main\\WinFormsApp1\\WinFormsApp1.csproj",
         "projectName": "WinFormsApp1",
-        "projectPath": "C:\\Users\\Fmudi\\Desktop\\WinFormsApp1\\WinFormsApp1\\WinFormsApp1.csproj",
+        "projectPath": "C:\\Users\\Fmudi\\Desktop\\Filling-shapes-main\\WinFormsApp1\\WinFormsApp1.csproj",
         "packagesPath": "C:\\Users\\Fmudi\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Fmudi\\Desktop\\WinFormsApp1\\WinFormsApp1\\obj\\",
+        "outputPath": "C:\\Users\\Fmudi\\Desktop\\Filling-shapes-main\\WinFormsApp1\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "Z:\\Vizual\\Shared\\NuGetPackages"

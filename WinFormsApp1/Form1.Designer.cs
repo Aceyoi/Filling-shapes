@@ -44,7 +44,7 @@
             button1.TabIndex = 3;
             button1.Text = "Нарисовать закрашеный треугольник";
             button1.UseVisualStyleBackColor = true;
-            button1.Click += button1_Click;
+
             // 
             // pictureBox2
             // 
